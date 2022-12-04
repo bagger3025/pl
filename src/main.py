@@ -37,6 +37,7 @@ class LitAutoEncoder(pl.LightningModule):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.save_hyperparameters()
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
@@ -93,25 +94,18 @@ valid_loader = DataLoader(valid_set)
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
 
 # train model
-trainer = pl.Trainer()
+# simply by using the Trainer you get automatic checkpointing
+trainer = pl.Trainer(max_epochs=2)
 trainer.fit(model=autoencoder, train_dataloaders=train_loader,
             val_dataloaders=valid_loader)
 
-
-# Eliminate the training loop
-# autoencoder = LitAutoEncoder(Encoder(), Decoder())
-# optimizer = autoencoder.configure_optimizers()
-
-# for batch_idx, batch in enumerate(train_loader):
-#     loss = autoencoder.training_step(batch, batch_idx)
-
-#     loss.backward()
-#     optimizer.step()
-#     optimizer.zero_grad()
-
+model = LitAutoEncoder.load_from_checkpoint(
+    "lightning_logs/version_0/checkpoints/epoch=1-step=96000.ckpt")
+# automatically restores model, epoch, step, LR schedulers, apex, etc...
+trainer.fit(model, ckpt_path="some/path/to/my_checkpoint.ckpt")
 
 # initialize the Trainer
 trainer = pl.Trainer()
 
 # test the model
-trainer.test(model=autoencoder, dataloaders=DataLoader(test_set))
+trainer.test(model=model, dataloaders=DataLoader(test_set))
