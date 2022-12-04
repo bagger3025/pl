@@ -12,8 +12,10 @@ import torchvision.models as models
 
 import pytorch_lightning as pl
 
-from pytorch_lightning.cli import LightningCLI
+
+# from pytorch_lightning.cli import LightningCLI
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelSummary
 
 
 class Encoder(nn.Module):
@@ -39,9 +41,16 @@ class Decoder(nn.Module):
 class LitAutoEncoder(pl.LightningModule):
     def __init__(self, encoder, decoder):
         super().__init__()
+        self.example_input_array = torch.Tensor(32, 1, 28, 28)
         self.encoder = encoder
         self.decoder = decoder
         self.save_hyperparameters()
+
+    def forward(self, x):
+        x = x.view(x.size(0), -1)
+        z = self.encoder(x)
+        x_hat = self.decoder(z)
+        return x_hat
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.
@@ -75,7 +84,7 @@ class LitAutoEncoder(pl.LightningModule):
         return optimizer
 
 
-cli = LightningCLI(LitAutoEncoder)
+# cli = LightningCLI(LitAutoEncoder)
 
 # Load data sets
 transform = transforms.ToTensor()
@@ -100,13 +109,14 @@ valid_loader = DataLoader(valid_set)
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
 
 # train model
-trainer = pl.Trainer(max_epochs=2, callbacks=[
-                     EarlyStopping(monitor="val_loss", mode="min")])
+# trainer = pl.Trainer(fast_dev_run=7)
+# trainer = pl.Trainer(limit_train_batches=0.1, limit_val_batches=0.01)
+trainer = pl.Trainer(callbacks=[ModelSummary(max_depth=-1)])
 trainer.fit(model=autoencoder, train_dataloaders=train_loader,
             val_dataloaders=valid_loader)
 
 # initialize the Trainer
-trainer = pl.Trainer()
+# trainer = pl.Trainer()
 
 # test the model
-trainer.test(model=autoencoder, dataloaders=DataLoader(test_set))
+# trainer.test(model=autoencoder, dataloaders=DataLoader(test_set))
