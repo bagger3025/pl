@@ -11,6 +11,8 @@ from torchvision import datasets
 
 import pytorch_lightning as pl
 
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
 
 class Encoder(nn.Module):
     def __init__(self):
@@ -93,19 +95,30 @@ valid_loader = DataLoader(valid_set)
 # model
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
 
+
+# need early stopping in a different part of training
+class MyEarlyStopping(EarlyStopping):
+    def on_validation_end(self, trainer, pl_module):
+        # override this to disable early stopping at the end of val loop
+        pass
+
+    def on_train_end(self, trainer, pl_module):
+        # instead, do it at the end of training loop
+        self._run_early_stopping_check(trainer)
+
+
+# customize behaviour
+early_stop_callback = EarlyStopping(
+    monitor="val_accuracy", min_delta=0.00, patience=3, verbose=False, mode="max")
+
 # train model
-# simply by using the Trainer you get automatic checkpointing
-trainer = pl.Trainer(max_epochs=2)
+trainer = pl.Trainer(max_epochs=2, callbacks=[
+                     EarlyStopping(monitor="val_loss", mode="min")])
 trainer.fit(model=autoencoder, train_dataloaders=train_loader,
             val_dataloaders=valid_loader)
-
-model = LitAutoEncoder.load_from_checkpoint(
-    "lightning_logs/version_0/checkpoints/epoch=1-step=96000.ckpt")
-# automatically restores model, epoch, step, LR schedulers, apex, etc...
-trainer.fit(model, ckpt_path="some/path/to/my_checkpoint.ckpt")
 
 # initialize the Trainer
 trainer = pl.Trainer()
 
 # test the model
-trainer.test(model=model, dataloaders=DataLoader(test_set))
+trainer.test(model=autoencoder, dataloaders=DataLoader(test_set))
