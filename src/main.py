@@ -15,7 +15,7 @@ import pytorch_lightning as pl
 
 # from pytorch_lightning.cli import LightningCLI
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from pytorch_lightning.callbacks import ModelSummary
+from pytorch_lightning.callbacks import ModelSummary, DeviceStatsMonitor
 
 
 class Encoder(nn.Module):
@@ -68,7 +68,7 @@ class LitAutoEncoder(pl.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         val_loss = F.mse_loss(x_hat, x)
-        self.log("val_loss", val_loss)
+        self.log("val_loss", val_loss, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         # this is the test loop
@@ -77,7 +77,7 @@ class LitAutoEncoder(pl.LightningModule):
         z = self.encoder(x)
         x_hat = self.decoder(z)
         test_loss = F.mse_loss(x_hat, x)
-        self.log("test_loss", test_loss)
+        self.log("test_loss", test_loss, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -109,9 +109,8 @@ valid_loader = DataLoader(valid_set)
 autoencoder = LitAutoEncoder(Encoder(), Decoder())
 
 # train model
-# trainer = pl.Trainer(fast_dev_run=7)
-# trainer = pl.Trainer(limit_train_batches=0.1, limit_val_batches=0.01)
-trainer = pl.Trainer(callbacks=[ModelSummary(max_depth=-1)])
+trainer = pl.Trainer(profiler="simple", max_epochs=1,
+                     callbacks=[DeviceStatsMonitor()])
 trainer.fit(model=autoencoder, train_dataloaders=train_loader,
             val_dataloaders=valid_loader)
 
