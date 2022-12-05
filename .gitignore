@@ -1,2 +1,4 @@
-src/lightning_logs
+src/**/lightning_logs
+src/regression/data/my_data.npy
 src/MNIST
+*/**/__pycache__
