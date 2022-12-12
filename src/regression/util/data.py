@@ -9,9 +9,10 @@ BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 MY_DATA_FILE = os.path.join(DATA_DIR, "my_data.npy")
 
+
 class regressionDataSet(Dataset):
     def __init__(self, data_dir: str = MY_DATA_FILE, stage: str = "train"):
-        
+
         if stage == "train" or stage == "val":
             self.data = np.load(data_dir)[:10000]
         elif stage == "test":
@@ -19,14 +20,16 @@ class regressionDataSet(Dataset):
         elif stage == "predict":
             self.data = np.load(data_dir)[11000:]
         else:
-            raise ValueError("stage should be one of [train, val, test, predict], but got", stage)
+            raise ValueError(
+                "stage should be one of [train, val, test, predict], but got", stage)
+        self.data = self.data.astype(np.float32)
 
     def __getitem__(self, index: int):
-        return self.data[index][0], self.data[index][1]
+
+        return np.array([self.data[index][0]]), np.array([self.data[index][1]])
 
     def __len__(self):
         return self.data.shape[0]
-
 
 
 class regressionDataModule(pl.LightningDataModule):
@@ -37,7 +40,8 @@ class regressionDataModule(pl.LightningDataModule):
 
     def setup(self, stage: str) -> None:
         full_set = regressionDataSet(self.data_dir)
-        self.train_set, self.val_set = data.random_split(full_set, [9000, 1000])
+        self.train_set, self.val_set = data.random_split(full_set, [
+                                                         9000, 1000])
         self.test_set = regressionDataSet(self.data_dir, "test")
         self.predict_set = regressionDataSet(self.data_dir, "test")
 
@@ -52,5 +56,3 @@ class regressionDataModule(pl.LightningDataModule):
 
     def predict_dataloader(self):
         return DataLoader(self.predict_set, batch_size=1, shuffle=False)
-    
-    
