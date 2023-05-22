@@ -6,8 +6,8 @@ pytorch lightning
 
 ```bash
 
-$ pip install pytorch-lightning
-$ pip install "pytorch-lightning[extra]"
+$ python -m pip install --upgrade pip
+$ pip install lightning
 $ pip install tensorboard
 
 ```

@@ -1,36 +1,42 @@
 import os
-import pytorch_lightning as pl
+import lightning as L
 from torch.utils.data import Dataset, DataLoader
 from torch.utils import data
 import numpy as np
+import pandas as pd
 
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-MY_DATA_FILE = os.path.join(DATA_DIR, "my_data.npy")
+SRC_DIR = os.path.join(BASE_DIR, "..")
+DATA_DIR = os.path.join(SRC_DIR, "..", "data")
+DATA_NAME = "classifier_data.csv"
 
 class classifierDataSet(Dataset):
-    def __init__(self, data_dir: str = MY_DATA_FILE, stage: str = "train"):
+    def __init__(self, df, stage: str = "train"):
+        self.data = df
+        print(self.data.head())
 
-        if stage == "train" or stage == "val":
-            self.data = np.load(data_dir)[:90_000]
-        elif stage == "test":
-            self.data = np.load(data_dir)[90_000:95_000]
-        elif stage == "predict":
-            self.data = np.load(data_dir)[95_000:]
-        else:
+        self.features = df.loc[:, ["x", "y"]]
+        self.classes = df.loc[:, "class"]
+
+        if stage not in ['train', 'val', 'test', 'predict']:
             raise ValueError(
-                "stage should be one of [train, val, test, predict], but got", stage)
+                f"stage should be one of [train, val, test, predict], but got {stage}")
 
     def __getitem__(self, index: int):
-        return np.array(self.data[index][0:2]), np.array(self.data[index][2], dtype=np.int_)
+        return self.features.iloc[index], self.classes.iloc[index]
 
     def __len__(self):
         return self.data.shape[0]
 
+df = pd.read_csv(os.path.join(DATA_DIR, DATA_NAME))
 
-class classifierDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = MY_DATA_FILE, batch_size: int = 32):
+cd = classifierDataSet(df)
+print(cd[3])
+
+
+class classifierDataModule(L.LightningDataModule):
+    def __init__(self, data_dir: str, batch_size: int = 32):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size

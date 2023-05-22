@@ -3,3 +3,4 @@ src/regression/data/my_data.npy
 src/MNIST
 */**/__pycache__
 */**/data
+data/*.csv

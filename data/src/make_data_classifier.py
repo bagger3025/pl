@@ -5,13 +5,14 @@
 
 import random
 import os
+import pandas as pd
 
 import numpy as np
 
 SEED = 42
 DATA_LEN = 100_000
 CUR_FILEPATH = os.path.dirname(os.path.abspath(__file__))
-DATA_FILEPATH = os.path.join(CUR_FILEPATH, "..", "data")
+DATA_FILEPATH = os.path.join(CUR_FILEPATH, "..")
 os.makedirs(DATA_FILEPATH, exist_ok=True)
 
 random.seed(SEED)
@@ -29,5 +30,7 @@ def get_class(x, y):
 data = [(random.random() * 200, random.random() * 200) for _ in range(DATA_LEN)]
 data = [(x, y, get_class(x, y)) for x, y in data]
 data = np.array(data, dtype=np.float32)
-np.save(os.path.join(DATA_FILEPATH, "my_data"), data)
 
+df = pd.DataFrame(data, columns=['x', 'y', 'class'])
+print(df.head())
+df.to_csv(os.path.join(DATA_FILEPATH, "classifier_data.csv"), index=False)
